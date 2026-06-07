@@ -1,23 +1,22 @@
 import os
 import requests
-from dotenv import load_dotenv
+import streamlit as st
 
-load_dotenv()
 
-API_KEY = os.getenv("OLLAMA_API_KEY")
+API_KEY = os.secret("OLLAMA_API_KEY")
 
-URL = "https://ollama.com/api/generate"
+API_ENDPOINT = os.secret("API_ENDPOINT")
 
 
 def ask_slm(prompt):
 
     response = requests.post(
-        URL,
+        API_ENDPOINT,
         headers={
             "Authorization": f"Bearer {API_KEY}"
         },
         json={
-            "model": "gpt-oss:120b",
+            "model": "phi3:mini",
             "prompt": prompt,
             "stream": False
         },
