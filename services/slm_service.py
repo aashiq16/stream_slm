@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 API_KEY = st.secrets["OLLAMA_API_KEY"]
-API_ENDPOINT = st.secrets["OLLAMA_API_ENDPOINT"]
+API_ENDPOINT = st.secrets["API_ENDPOINT"]
 
 def ask_slm(prompt):
 
