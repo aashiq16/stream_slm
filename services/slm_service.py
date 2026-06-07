@@ -1,22 +1,19 @@
-import os
 import requests
 import streamlit as st
 
-
 API_KEY = st.secrets["OLLAMA_API_KEY"]
-
-API_ENDPOINT = st.secrets["API_ENDPOINT"]
-
+API_ENDPOINT = st.secrets["OLLAMA_API_ENDPOINT"]
 
 def ask_slm(prompt):
 
     response = requests.post(
         API_ENDPOINT,
         headers={
-            "Authorization": f"Bearer {API_KEY}"
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
         },
         json={
-            "model": "phi3:mini",
+            "model": "phi3",
             "prompt": prompt,
             "stream": False
         },
@@ -25,10 +22,4 @@ def ask_slm(prompt):
 
     response.raise_for_status()
 
-    return f"""
-    Status Code: {response.status_code}
-    
-    Response:
-    
-    {response.text}
-    """
+    return response.json()["response"]
