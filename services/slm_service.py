@@ -13,7 +13,7 @@ def ask_slm(prompt):
             "Content-Type": "application/json"
         },
         json={
-            "model": "phi3",
+            "model": "llama3.2:3b",
             "prompt": prompt,
             "stream": False
         },
