@@ -25,4 +25,10 @@ def ask_slm(prompt):
 
     response.raise_for_status()
 
-    return response.json()["response"]
+    return f"""
+    Status Code: {response.status_code}
+    
+    Response:
+    
+    {response.text}
+    """
