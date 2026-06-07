@@ -1,37 +1,210 @@
+
 import streamlit as st
-import pandas as pd
-from services.profiler import get_profile
-from services.insight_engine import generate_insights
-from services.story_generator import generate_story
 
-st.set_page_config(page_title="Data Storytelling Copilot", layout="wide")
+from services.data_loader import load_csv
+from services.metadata_service import get_metadata
+from services.story_generator import ask_dataset
 
-st.title("📊 Data Storytelling Copilot (SLM Powered)")
 
-uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+# ==========================================
+# PAGE CONFIG
+# ==========================================
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+st.set_page_config(
+    layout="wide"
+)
 
-    st.subheader("Data Preview")
-    st.dataframe(df.head())
+# ==========================================
+# SIDEBAR
+# ==========================================
 
-    profile = get_profile(df)
+with st.sidebar:
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Rows", profile["rows"])
-    c2.metric("Columns", profile["columns"])
-    c3.metric("Missing Values", profile["missing"])
+    st.title("📊 Dataset")
 
-    insights = generate_insights(df)
+    uploaded_file = st.file_uploader(
+        "Upload CSV Dataset",
+        type=["csv"]
+    )
 
-    st.subheader("Insights")
-    for insight in insights:
-        st.write("✅", insight)
+    if uploaded_file:
 
-    if st.button("Generate Executive Summary"):
-        with st.spinner("Generating story..."):
-            summary = generate_story(insights)
+        df = load_csv(uploaded_file)
 
-        st.subheader("Business Story")
-        st.write(summary)
+        st.session_state["df"] = df
+
+        st.success("Dataset Loaded")
+
+        st.divider()
+
+        st.subheader("Dataset Metadata")
+
+        st.write(
+            f"Rows: {len(df):,}"
+        )
+
+        st.write(
+            f"Columns: {len(df.columns)}"
+        )
+
+        st.write(
+            f"Missing Values: {df.isnull().sum().sum():,}"
+        )
+
+        st.divider()
+
+        st.subheader("Column Explorer")
+
+        metadata = get_metadata(df)
+
+        for item in metadata:
+
+            with st.expander(
+                item["column"]
+            ):
+
+                st.write(
+                    f"Type: {item['type']}"
+                )
+
+                st.write(
+                    f"Null Values: {item['nulls']}"
+                )
+
+# ==========================================
+# MAIN PAGE
+# ==========================================
+st.title("📈Daily Data Partner")
+
+st.caption(
+    "Upload a dataset and ask questions in natural language."
+)
+
+# ==========================================
+# NO DATA UPLOADED
+# ==========================================
+
+if "df" not in st.session_state:
+
+    st.info(
+        "Upload a CSV dataset from the sidebar to begin."
+    )
+
+    st.subheader("Example Questions")
+
+    st.markdown("""
+- Give me an executive summary
+
+- What are the key observations?
+
+- Explain this dataset to leadership
+
+- What trends stand out?
+
+- What risks should management know?
+
+- Identify opportunities
+
+- Create a CEO briefing
+
+- Summarize business performance
+""")
+
+# ==========================================
+# DATA LOADED
+# ==========================================
+
+else:
+
+    df = st.session_state["df"]
+
+    # Initialize Chat
+
+    if "messages" not in st.session_state:
+
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content":
+                f"""
+Dataset loaded successfully.
+
+Rows: {len(df):,}
+
+Columns: {len(df.columns)}
+
+Available Fields:
+
+{', '.join(df.columns)}
+
+Ask me anything about your data.
+"""
+            }
+        ]
+
+    # Display Chat History
+
+    for message in st.session_state.messages:
+
+        with st.chat_message(
+            message["role"]
+        ):
+
+            st.markdown(
+                message["content"]
+            )
+
+    # Chat Input
+
+    user_prompt = st.chat_input(
+        "Ask anything about your dataset..."
+    )
+
+    if user_prompt:
+
+        # User Message
+
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": user_prompt
+            }
+        )
+
+        with st.chat_message("user"):
+
+            st.markdown(
+                user_prompt
+            )
+
+        # Assistant Response
+
+        with st.chat_message("assistant"):
+
+            with st.spinner(
+                "Analyzing dataset..."
+            ):
+
+                try:
+
+                    response = ask_dataset(
+                        df,
+                        user_prompt
+                    )
+
+                except Exception as e:
+
+                    response = (
+                        f"Error: {str(e)}"
+                    )
+
+                st.markdown(
+                    response
+                )
+
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response
+            }
+        )
